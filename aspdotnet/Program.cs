@@ -1,20 +1,5 @@
-# open-telemetry-dotnet
-Demonstration of Open Telemetry Instrumentation with .NET ASP Core
+using System.Globalization;
 
-# ASP.NET Core instrumentation configuration
-
-Install the instrumentation NuGet packages from OpenTelemetry that will generate the telemetry, and set them up.
-1 Add the packages
-```
-dotnet add package OpenTelemetry.Extensions.Hosting
-dotnet add package OpenTelemetry.Instrumentation.AspNetCore
-dotnet add package OpenTelemetry.Exporter.Console
-```
-
-2 Setup the OpenTelemetry code
-
-In Program.cs, add the following lines:
-```
 using Microsoft.AspNetCore.Mvc;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
@@ -22,11 +7,22 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
+var  MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+
 var builder = WebApplication.CreateBuilder(args);
 
 const string serviceName = "My Dataset Name";
 const string otelEndpoint = "https://sdk.playerzero.app/otlp";
 const string otelHeaders = "Authorization=Bearer <api token>,x-pzprod=false";
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+                      builder =>
+                      {
+                          builder.WithOrigins("http://localhost:3000", "http://localhost:3001");
+                      });
+});
 
 builder.Logging.AddOpenTelemetry(options =>
 {
@@ -34,6 +30,7 @@ builder.Logging.AddOpenTelemetry(options =>
         .SetResourceBuilder(
             ResourceBuilder.CreateDefault()
                 .AddService(serviceName))
+//        .AddConsoleExporter()
         .AddOtlpExporter(options =>
             {
                 options.Endpoint = new Uri(otelEndpoint + "/v1/logs");
@@ -47,6 +44,7 @@ builder.Services.AddOpenTelemetry()
         .AddSource(serviceName)
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
+//        .AddConsoleExporter()
         .AddOtlpExporter(options =>
             {
                 options.Endpoint = new Uri(otelEndpoint + "/v1/traces");
@@ -59,6 +57,7 @@ builder.Services.AddOpenTelemetry()
           .AddMeter("System.Net.Http")
           .AddAspNetCoreInstrumentation()
           .AddHttpClientInstrumentation()
+//          .AddConsoleExporter()
           .AddOtlpExporter(options =>
             {
                 options.Endpoint = new Uri(otelEndpoint + "/v1/metrics");
@@ -68,4 +67,36 @@ builder.Services.AddOpenTelemetry()
 
 var app = builder.Build();
 
-```
+string HandleRollDice([FromServices]ILogger<Program> logger, string? player)
+{
+    var result = RollDice();
+
+    if (string.IsNullOrEmpty(player))
+    {
+        logger.LogInformation("Anonymous player is rolling the dice: {result}", result);
+    }
+    else
+    {
+        logger.LogInformation("{player} is rolling the dice: {result}", player, result);
+    }
+
+    return result.ToString(CultureInfo.InvariantCulture);
+}
+
+int RollDice()
+{
+    int dice = Random.Shared.Next(1, 7);
+    if (dice == 4) {
+        throw new Exception("Error");
+    }
+    return dice;
+}
+
+app.UseHttpsRedirection();
+app.UseRouting();
+
+app.UseCors(MyAllowSpecificOrigins);
+
+app.MapGet("/rolldice/{player?}", HandleRollDice);
+
+app.Run();
