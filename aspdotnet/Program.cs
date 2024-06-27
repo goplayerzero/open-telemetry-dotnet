@@ -6,10 +6,13 @@ using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using System.Diagnostics;
 
 var  MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 var builder = WebApplication.CreateBuilder(args);
+
+var p0ActivitySource = new ActivitySource("activity.source.name");
 
 const string serviceName = "My Dataset Name";
 const string otelEndpoint = "https://sdk.playerzero.app/otlp";
@@ -30,7 +33,7 @@ builder.Logging.AddOpenTelemetry(options =>
         .SetResourceBuilder(
             ResourceBuilder.CreateDefault()
                 .AddService(serviceName))
-//        .AddConsoleExporter()
+    //    .AddConsoleExporter()
         .AddOtlpExporter(options =>
             {
                 options.Endpoint = new Uri(otelEndpoint + "/v1/logs");
@@ -44,7 +47,8 @@ builder.Services.AddOpenTelemetry()
         .AddSource(serviceName)
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
-//        .AddConsoleExporter()
+    //    .AddConsoleExporter()
+        .AddSource(p0ActivitySource.Name)
         .AddOtlpExporter(options =>
             {
                 options.Endpoint = new Uri(otelEndpoint + "/v1/traces");
@@ -57,7 +61,7 @@ builder.Services.AddOpenTelemetry()
           .AddMeter("System.Net.Http")
           .AddAspNetCoreInstrumentation()
           .AddHttpClientInstrumentation()
-//          .AddConsoleExporter()
+        //  .AddConsoleExporter()
           .AddOtlpExporter(options =>
             {
                 options.Endpoint = new Uri(otelEndpoint + "/v1/metrics");
@@ -69,6 +73,14 @@ var app = builder.Build();
 
 string HandleRollDice([FromServices]ILogger<Program> logger, string? player)
 {
+    using var activity = p0ActivitySource.StartActivity("ActivityName");
+    if (activity != null)
+    {        
+        activity.TraceStateString = "userid=1234"; // set any trace-state-info
+        activity.AddTag("myTag", "myValue"); // Set any tag
+        activity.AddBaggage("myBaggage", "myBaggageValue"); // Set any baggage
+    }
+
     var result = RollDice();
 
     if (string.IsNullOrEmpty(player))
