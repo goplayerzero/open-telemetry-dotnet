@@ -41,10 +41,11 @@ namespace dotnet_simple.controllers
             }
 
             var currentActivity = Activity.Current;
+            
             if (currentActivity != null)
             {
                 // Add TraceStateString if user is valid
-                currentActivity.TraceStateString = $"userId={user.UserId}";
+                currentActivity.TraceStateString = $"userid={user.UserId}";
 
                 // Log TraceId and SpanId
                 _logger.LogInformation("TraceId: {TraceId}, SpanId: {SpanId}", currentActivity.TraceId, currentActivity.SpanId);
