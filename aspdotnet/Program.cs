@@ -10,9 +10,9 @@ var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 var builder = WebApplication.CreateBuilder(args);
 
-const string serviceName = "June28.ActivitySource";
+const string serviceName = "My Dataset Name";
 const string otelEndpoint = "https://sdk.playerzero.app/otlp";
-const string otelHeaders = "Authorization=Bearer 666af2fef6b93a24518cf726,x-pzprod=false";
+const string otelHeaders = "Authorization=Bearer <api token>,x-pzprod=false";
 
 builder.Services.AddCors(options =>
 {
@@ -29,7 +29,7 @@ builder.Logging.AddOpenTelemetry(options =>
         .SetResourceBuilder(
             ResourceBuilder.CreateDefault()
                 .AddService(serviceName))
-       .AddConsoleExporter()
+    //    .AddConsoleExporter()
         .AddOtlpExporter(options =>
             {
                 options.Endpoint = new Uri(otelEndpoint + "/v1/logs");
@@ -44,7 +44,7 @@ builder.Services.AddOpenTelemetry()
         .AddSource(serviceName)
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
-       .AddConsoleExporter()
+    //    .AddConsoleExporter()
         .AddOtlpExporter(options =>
             {
                 options.Endpoint = new Uri(otelEndpoint + "/v1/traces");
@@ -57,7 +57,7 @@ builder.Services.AddOpenTelemetry()
         .AddMeter("System.Net.Http")
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
-     .AddConsoleExporter()
+    //  .AddConsoleExporter()
         .AddOtlpExporter(options =>
             {
                 options.Endpoint = new Uri(otelEndpoint + "/v1/metrics");
