@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Globalization;
 using System.Diagnostics;
+using dotnet_simple.model;
+using Microsoft.EntityFrameworkCore;
 
 namespace dotnet_simple.controllers
 {
@@ -15,10 +17,17 @@ namespace dotnet_simple.controllers
             "Keyboard"
         };
         private readonly ILogger<HomeController> _logger;
+        private readonly ApplicationDbContext _context;
 
-        public HomeController(ILogger<HomeController> logger)
+        // public HomeController(ApplicationDbContext context)
+        // {
+        //     _context = context;
+        // }
+
+        public HomeController(ILogger<HomeController> logger, ApplicationDbContext context)
         {
             _logger = logger;
+            _context = context;
         }
 
         [HttpGet("rolldice/{player?}")]
@@ -102,6 +111,32 @@ namespace dotnet_simple.controllers
 
             _products.RemoveAt(id);
             return NoContent();
+        }
+
+        [HttpGet("players")]
+        public async Task<IActionResult> GetPlayers()
+        {
+            _logger.LogWarning("Get Players");
+            var players = await _context.Players.FromSqlRaw("EXEC GetAllPlayers").ToListAsync();
+            return Ok(players);
+        }
+
+        [HttpGet("player/{id}")]
+        public async Task<IActionResult> GetPlayerDetails(int id)
+        {
+            _logger.LogWarning("Get Player details"+id);
+            // Call the stored procedure to get player details by ID
+            var playerDetails = await _context.Players
+                .FromSqlRaw("EXEC GetPlayerDetails @PlayerId = {0}", id)
+                .ToListAsync();
+
+            if (playerDetails == null || playerDetails.Count == 0)
+            {
+                _logger.LogError("Player not found "+id);
+                return NotFound(); // Return 404 if no player found
+            }
+
+            return Ok(playerDetails);
         }
     }
 }

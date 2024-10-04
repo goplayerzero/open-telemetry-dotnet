@@ -1,5 +1,7 @@
 using System.Globalization;
+using dotnet_simple.model;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
@@ -10,9 +12,9 @@ var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 var builder = WebApplication.CreateBuilder(args);
 
-const string serviceName = "My Dataset Name";
+const string serviceName = "My Dataset";
 const string otelEndpoint = "https://sdk.playerzero.app/otlp";
-const string otelHeaders = "Authorization=Bearer <api token>,x-pzprod=false";
+const string otelHeaders = "Authorization=Bearer <api_token>,x-pzprod=false";
 
 builder.Services.AddCors(options =>
 {
@@ -29,7 +31,7 @@ builder.Logging.AddOpenTelemetry(options =>
         .SetResourceBuilder(
             ResourceBuilder.CreateDefault()
                 .AddService(serviceName))
-    //    .AddConsoleExporter()
+       .AddConsoleExporter()
         .AddOtlpExporter(options =>
             {
                 options.Endpoint = new Uri(otelEndpoint + "/v1/logs");
@@ -44,7 +46,12 @@ builder.Services.AddOpenTelemetry()
         .AddSource(serviceName)
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
-    //    .AddConsoleExporter()
+        .AddSqlClientInstrumentation(options =>
+            {
+                options.SetDbStatementForText = true;
+                options.SetDbStatementForStoredProcedure = true;
+            })
+        .AddConsoleExporter()
         .AddOtlpExporter(options =>
             {
                 options.Endpoint = new Uri(otelEndpoint + "/v1/traces");
@@ -57,7 +64,7 @@ builder.Services.AddOpenTelemetry()
         .AddMeter("System.Net.Http")
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
-    //  .AddConsoleExporter()
+        .AddConsoleExporter()
         .AddOtlpExporter(options =>
             {
                 options.Endpoint = new Uri(otelEndpoint + "/v1/metrics");
@@ -66,6 +73,9 @@ builder.Services.AddOpenTelemetry()
             }));
 
 builder.Services.AddControllers();
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
 
