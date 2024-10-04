@@ -12,9 +12,9 @@ var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 var builder = WebApplication.CreateBuilder(args);
 
-const string serviceName = "dotnet-sql";
+const string serviceName = "My Dataset";
 const string otelEndpoint = "https://sdk.playerzero.app/otlp";
-const string otelHeaders = "Authorization=Bearer 666af2fef6b93a24518cf726,x-pzprod=false";
+const string otelHeaders = "Authorization=Bearer <api_token>,x-pzprod=false";
 
 builder.Services.AddCors(options =>
 {
