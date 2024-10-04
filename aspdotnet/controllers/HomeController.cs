@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Globalization;
 using System.Diagnostics;
+using dotnet_simple.model;
+using Microsoft.EntityFrameworkCore;
 
 namespace dotnet_simple.controllers
 {
@@ -15,10 +17,17 @@ namespace dotnet_simple.controllers
             "Keyboard"
         };
         private readonly ILogger<HomeController> _logger;
+        private readonly ApplicationDbContext _context;
 
-        public HomeController(ILogger<HomeController> logger)
+        // public HomeController(ApplicationDbContext context)
+        // {
+        //     _context = context;
+        // }
+
+        public HomeController(ILogger<HomeController> logger, ApplicationDbContext context)
         {
             _logger = logger;
+            _context = context;
         }
 
         [HttpGet("rolldice/{player?}")]
@@ -102,6 +111,13 @@ namespace dotnet_simple.controllers
 
             _products.RemoveAt(id);
             return NoContent();
+        }
+
+        [HttpGet("players")]
+        public async Task<IActionResult> GetPlayers()
+        {
+            var players = await _context.Players.FromSqlRaw("EXEC GetAllPlayers").ToListAsync();
+            return Ok(players);
         }
     }
 }
