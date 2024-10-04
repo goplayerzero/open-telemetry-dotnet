@@ -116,8 +116,27 @@ namespace dotnet_simple.controllers
         [HttpGet("players")]
         public async Task<IActionResult> GetPlayers()
         {
+            _logger.LogWarning("Get Players");
             var players = await _context.Players.FromSqlRaw("EXEC GetAllPlayers").ToListAsync();
             return Ok(players);
+        }
+
+        [HttpGet("player/{id}")]
+        public async Task<IActionResult> GetPlayerDetails(int id)
+        {
+            _logger.LogWarning("Get Player details"+id);
+            // Call the stored procedure to get player details by ID
+            var playerDetails = await _context.Players
+                .FromSqlRaw("EXEC GetPlayerDetails @PlayerId = {0}", id)
+                .ToListAsync();
+
+            if (playerDetails == null || playerDetails.Count == 0)
+            {
+                _logger.LogError("Player not found "+id);
+                return NotFound(); // Return 404 if no player found
+            }
+
+            return Ok(playerDetails);
         }
     }
 }

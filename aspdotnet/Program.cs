@@ -46,7 +46,12 @@ builder.Services.AddOpenTelemetry()
         .AddSource(serviceName)
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
-       .AddConsoleExporter()
+        .AddSqlClientInstrumentation(options =>
+            {
+                options.SetDbStatementForText = true;
+                options.SetDbStatementForStoredProcedure = true;
+            })
+        .AddConsoleExporter()
         .AddOtlpExporter(options =>
             {
                 options.Endpoint = new Uri(otelEndpoint + "/v1/traces");
@@ -59,7 +64,7 @@ builder.Services.AddOpenTelemetry()
         .AddMeter("System.Net.Http")
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
-     .AddConsoleExporter()
+        .AddConsoleExporter()
         .AddOtlpExporter(options =>
             {
                 options.Endpoint = new Uri(otelEndpoint + "/v1/metrics");
